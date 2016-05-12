@@ -16,34 +16,27 @@ program symopt
   
   ! Grid to perform symmetry operations on
   integer, dimension(gridx,gridy) :: grid
-  grid = 0;
+  
+  ! Output array for beam positions
+  integer, dimension( 2, ((gridx / 2) * (gridy / 2))) :: output
+  
+  grid = 0
+  output = -1
   
   ! Variable to store the number of required beam positions
   n = 0
   
-  
-  !outer: do i=1,9
-  !  inner: do j=1,9
-  !    print *, "before: ",i,j
-  !    if(j>3) cycle outer
-  !    print *, "before: ",i,j
-  !    if(j>6) exit outer
-  !    print *, "after: ",i,j
-  !  end do inner
-  !end do outer
-  
-  !print *, grid
-  
+  ! Cycle over one quarter of the grid and perform on grid point symmetry operations in order to minimize the number of needed beam positions
   do i=1,( gridx / 2 )
     do j=1,( gridy / 2 )
       select case ( grid(i,j) )
         case (0)
-          call mark_beam_pos(i,j,n,grid,gridx,gridy)
+          call mark_beam_pos(i,j,n,grid,gridx,gridy,output)
         case (1,2)
           cycle
-        case default
-          grid(i,j) = 0
-          call mark_beam_pos(i,j,n,grid,gridx,gridy)
+!        case default
+!          grid(i,j) = 0
+!          call mark_beam_pos(i,j,n,grid,gridx,gridy)
       end select        
     end do
   end do
@@ -51,25 +44,39 @@ program symopt
   ! Output results
   print *, n
   open(unit=10, file='grid.out', action='write')
+  open(unit=11, file='beam_pos.out', action='write')
   
+  ! Output visualization of the necessary beam positions
   do i=1,gridx
     write(10,*) grid(i,:)
   end do
   
+  ! Output beam positions
+  do i=1,((gridx / 2) * (gridy / 2))
+    write(11,*) output(:,i)
+  end do
+  
   close(10)
+  close(11)
   
 end program symopt
 
 
-subroutine mark_beam_pos(i,j,n,grid,gridx,gridy)
+subroutine mark_beam_pos(i,j,n,grid,gridx,gridy,output)
   
   integer :: i,j,k,l,n
   integer :: rux,ruy,llx,lly,rlx,rly
   integer :: gridx,gridy
   integer, dimension(gridx,gridy) :: grid
+  integer, dimension( 2, ((gridx / 2) * (gridy / 2))) :: output
   
   grid(i,j) = 1
   n = n + 1
+  ! Use modified Cantor pairing function to assign each grid position 
+  output(1, (j + ( (i+j-2) * (i+j-1) ) / 2)) = i
+  output(2, (j + ( (i+j-2) * (i+j-1) ) / 2)) = j
+  
+  print *, output(2, (j + ( (i+j-2) * (i+j-1) ) / 2))
   
   ! Perform 4-fold rotational symmetry operation
   ! Rotation by pi/2
