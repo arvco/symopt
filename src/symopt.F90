@@ -15,28 +15,25 @@ program symopt
   integer, parameter :: gridy = 20
   
   ! Grid to perform symmetry operations on
-  integer, dimension(gridx,gridy) :: grid
+  integer, dimension(gridx,gridy) :: grid=0
   
   ! Output array for beam positions
-  integer, dimension( 2, ((gridx / 2) * (gridy / 2))) :: output
+  integer, parameter :: pairleng = (gridy  + (( (gridx + gridy) - 2) * ((gridx + gridy) - 1)) / 2)
+  integer, dimension( 2, pairleng) :: output=0
   
-  grid = 0
-  output = -1
-  
+  print *, pairleng
+
   ! Variable to store the number of required beam positions
   n = 0
   
   ! Cycle over one quarter of the grid and perform on grid point symmetry operations in order to minimize the number of needed beam positions
-  do i=1,( gridx / 2 )
-    do j=1,( gridy / 2 )
+  do i=1,gridx
+    do j=1,gridy
       select case ( grid(i,j) )
         case (0)
-          call mark_beam_pos(i,j,n,grid,gridx,gridy,output)
+          call mark_beam_pos(i,j,n,grid,gridx,gridy,output,pairleng)
         case (1,2)
           cycle
-!        case default
-!          grid(i,j) = 0
-!          call mark_beam_pos(i,j,n,grid,gridx,gridy)
       end select        
     end do
   end do
@@ -52,8 +49,11 @@ program symopt
   end do
   
   ! Output beam positions
-  do i=1,((gridx / 2) * (gridy / 2))
+  do i=1,pairleng
     write(11,*) output(:,i)
+!    write(11,1000) output(1,i)
+!    write(11,1000) output(2,i)
+    1000 format(i3)
   end do
   
   close(10)
@@ -62,13 +62,13 @@ program symopt
 end program symopt
 
 
-subroutine mark_beam_pos(i,j,n,grid,gridx,gridy,output)
+subroutine mark_beam_pos(i,j,n,grid,gridx,gridy,output,pairleng)
   
   integer :: i,j,k,l,n
   integer :: rux,ruy,llx,lly,rlx,rly
-  integer :: gridx,gridy
+  integer :: gridx,gridy,pairleng
   integer, dimension(gridx,gridy) :: grid
-  integer, dimension( 2, ((gridx / 2) * (gridy / 2))) :: output
+  integer, dimension( 2, pairleng) :: output
   
   grid(i,j) = 1
   n = n + 1
@@ -76,7 +76,6 @@ subroutine mark_beam_pos(i,j,n,grid,gridx,gridy,output)
   output(1, (j + ( (i+j-2) * (i+j-1) ) / 2)) = i
   output(2, (j + ( (i+j-2) * (i+j-1) ) / 2)) = j
   
-  print *, output(2, (j + ( (i+j-2) * (i+j-1) ) / 2))
   
   ! Perform 4-fold rotational symmetry operation
   ! Rotation by pi/2
@@ -91,9 +90,8 @@ subroutine mark_beam_pos(i,j,n,grid,gridx,gridy,output)
   rux = j
   ruy = gridy - i + 1     
   if ( grid(rux,ruy) == 0) grid(rux,ruy) = 2
-!  print *, llx, lly, rlx, rly, rux, ruy
   
-
+  
   ! Perform translational symmetry operation on all grid points
   ! Translate point grid(i,j)
   do k = i, gridx, (gridx - 1)
@@ -119,13 +117,7 @@ subroutine mark_beam_pos(i,j,n,grid,gridx,gridy,output)
       if ( grid(k,l) == 0) grid(k,l) = 2
     end do
   end do
-
   
-!  do k=1,gridx
-!    print *, grid(k,:)
-!  end do
-!  print *, ' '
-
 end subroutine mark_beam_pos
 
 
